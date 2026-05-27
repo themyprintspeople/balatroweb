@@ -34,6 +34,31 @@ Module.expectedDataFileDownloads++;
     var PACKAGE_UUID = metadata.package_uuid;
 
     function fetchRemotePackage(packageName, packageSize, callback, errback) {
+      var chunks = ['game.data.0','game.data.1','game.data.2','game.data.3'];
+      var buffers = [];
+      var totalLoaded = 0;
+      chunks.forEach(function(chunk, i) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', chunk, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onerror = function() { errback(new Error('NetworkError for: ' + chunk)); };
+        xhr.onload = function() {
+          if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) {
+            buffers[i] = xhr.response;
+            totalLoaded += xhr.response.byteLength;
+            if (Module['setStatus']) Module['setStatus']('Downloading data... (' + totalLoaded + '/' + packageSize + ')');
+            var allLoaded = buffers.filter(Boolean).length === chunks.length;
+            if (allLoaded) {
+              var totalLength = buffers.reduce(function(a, b) { return a + b.byteLength; }, 0);
+              var combined = new Uint8Array(totalLength);
+              var offset = 0;
+              buffers.forEach(function(b) { combined.set(new Uint8Array(b), offset); offset += b.byteLength; });
+              callback(combined.buffer);
+            }
+          } else { errback(new Error(xhr.statusText + ' : ' + xhr.responseURL)); }
+        };
+        xhr.send(null);
+      });
       var xhr = new XMLHttpRequest();
       xhr.open('GET', packageName, true);
       xhr.responseType = 'arraybuffer';
