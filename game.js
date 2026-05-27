@@ -21,7 +21,7 @@ Module.expectedDataFileDownloads++;
       throw 'using preloaded data can only be done on a web page or in a web worker';
     }
     var PACKAGE_NAME = 'game.data';
-    var REMOTE_PACKAGE_BASE = 'https://onedrive.live.com/download?resid=40C12FC5D7CDFD96!105&authkey=!AJleLEouX00gpZA';
+    var REMOTE_PACKAGE_BASE = 'https://www.dropbox.com/scl/fi/0jkm29gxzb0yzp9hh553z/game.data?rlkey=e6s2fwaazsrcgemi3jgnkyfhk&st=tpg7070o&dl=1';
     if (typeof Module['locateFilePackage'] === 'function' && !Module['locateFile']) {
       Module['locateFile'] = Module['locateFilePackage'];
       Module.printErr('warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)');
