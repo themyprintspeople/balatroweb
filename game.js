@@ -34,52 +34,40 @@ Module.expectedDataFileDownloads++;
     var PACKAGE_UUID = metadata.package_uuid;
 
     function fetchRemotePackage(packageName, packageSize, callback, errback) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', packageName, true);
-      xhr.responseType = 'arraybuffer';
-      xhr.onprogress = function(event) {
-        var url = packageName;
-        var size = packageSize;
-        if (event.total) size = event.total;
-        if (event.loaded) {
-          if (!xhr.addedTotal) {
-            xhr.addedTotal = true;
-            if (!Module.dataFileDownloads) Module.dataFileDownloads = {};
-            Module.dataFileDownloads[url] = {
-              loaded: event.loaded,
-              total: size
-            };
+      var chunks = ['game.data.0','game.data.1','game.data.2','game.data.3'];
+      var buffers = [];
+      var totalLoaded = 0;
+      var totalSize = packageSize;
+      chunks.forEach(function(chunk, i) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', chunk, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onprogress = function(event) {
+          if (Module['setStatus']) Module['setStatus']('Downloading data... (' + totalLoaded + '/' + totalSize + ')');
+        };
+        xhr.onerror = function() { errback(new Error('NetworkError for: ' + chunk)); };
+        xhr.onload = function() {
+          if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) {
+            buffers[i] = xhr.response;
+            totalLoaded += xhr.response.byteLength;
+            var allLoaded = buffers.filter(Boolean).length === chunks.length;
+            if (allLoaded) {
+              var totalLength = buffers.reduce(function(a, b) { return a + b.byteLength; }, 0);
+              var combined = new Uint8Array(totalLength);
+              var offset = 0;
+              buffers.forEach(function(b) {
+                combined.set(new Uint8Array(b), offset);
+                offset += b.byteLength;
+              });
+              callback(combined.buffer);
+            }
           } else {
-            Module.dataFileDownloads[url].loaded = event.loaded;
+            errback(new Error(xhr.statusText + ' : ' + xhr.responseURL));
           }
-          var total = 0;
-          var loaded = 0;
-          var num = 0;
-          for (var download in Module.dataFileDownloads) {
-            var data = Module.dataFileDownloads[download];
-            total += data.total;
-            loaded += data.loaded;
-            num++;
-          }
-          total = Math.ceil(total * Module.expectedDataFileDownloads/num);
-          if (Module['setStatus']) Module['setStatus']('Downloading data... (' + loaded + '/' + total + ')');
-        } else if (!Module.dataFileDownloads) {
-          if (Module['setStatus']) Module['setStatus']('Downloading data...');
-        }
-      };
-      xhr.onerror = function(event) {
-        throw new Error("NetworkError for: " + packageName);
-      }
-      xhr.onload = function(event) {
-        if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
-          var packageData = xhr.response;
-          callback(packageData);
-        } else {
-          throw new Error(xhr.statusText + " : " + xhr.responseURL);
-        }
-      };
-      xhr.send(null);
-    };
+        };
+        xhr.send(null);
+      });
+    }
 
     function handleError(error) {
       console.error('package error:', error);
