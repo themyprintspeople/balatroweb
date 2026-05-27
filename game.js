@@ -270,6 +270,6 @@ Module.expectedDataFileDownloads++;
     }
 
   }
-  loadPackage({"package_uuid":"b2047b1f-7a9c-4410-8bee-da5d3d8bd51a","remote_package_size":324730991,"files":[{"filename":"./game.data?v=77","crunched":0,"start":0,"end":324730991,"audio":false}]});
+  loadPackage({"package_uuid":"5c3ad948-fc5e-4b3b-a732-e1a5519badef","remote_package_size":326363585,"files":[{"filename":"./game.data?v=78","crunched":0,"start":0,"end":326363585,"audio":false}]});
 
 })();
